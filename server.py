@@ -6,7 +6,7 @@ ip = ""
 port = 9776
 queue = 1
 timeout = 1
-cc = "s[exit]"
+cc = "s_end" # server_end - command to off the server
 splitter = '////////////////////\\\\\\\\\\\\\\\\\\\\'
 def_shell_command = ""
 dsc_spl = ""
@@ -36,12 +36,26 @@ def Start():
 
     while msg != cc:
         a = ""
+        msg = ""
         print(splitter)
-        msg = sock2.recv(1024).decode()
+
+        try:
+            print('waiting for command')
+            msg = sock2.recv(1024).decode()
+            print('after recv')
+            print("tried")
+            print(msg)
+            if msg == "":
+                print("Connection was refused by client... Reaccepting...")
+                return -2
+        except:
+            print('could NOT')
+            return -1
 
         if msg == "DSC":
             sock2.send('Set default shell command...'.encode())
             def_shell_command = sock2.recv(1024).decode()
+            
             if def_shell_command == "":
                 dsc_spl = ""
             else:
@@ -51,11 +65,11 @@ def Start():
             #try:
             args = def_shell_command+dsc_spl+msg
             print(f'args === {args}')
-
-            a = str(subprocess.run(args, stdout=subprocess.PIPE))
-            #except:
-                #sock2.send("errorp".encode())
-            print(a)
+            try:
+                a = str(subprocess.run(args, stdout=subprocess.PIPE))
+                print(a)
+            except:
+                sock2.send("Shell error... Check your command.".encode())
 
             sock2.send(a.encode())
             print(f'\ncommand === {msg} ===')
@@ -81,5 +95,10 @@ def Start():
 
 
 if __name__ == "__main__":
-    Start()
-    print('EOP')
+
+    RC = 1 # returned code
+    while RC != 0:
+        print("rc")
+        RC = Start()
+
+    print('eop')

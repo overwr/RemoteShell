@@ -3,12 +3,12 @@ import socket
 ip = "127.0.0.1"
 port = 9776
 timeout = 1
-cc = "---" # command to stop the program
+cc = "c_end" # command to stop the program client_end
 
 
 def Start():
 
-    msg = None
+    msg = ""
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -20,8 +20,10 @@ def Start():
 
 
     while msg != cc:
-        msg = input()
-
+        msg = ""
+        while msg == "":
+            msg = input()
+   
         try:
             sock.send(msg.encode())
         except:

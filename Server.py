@@ -92,6 +92,7 @@ if __name__ == "__main__":
     while rc != 0:
         print('Restart...')
         Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.TimeoutMessage)
+        Time.sleep(Settings.Timeout)
         rc = Start()
 
     print(Settings.EndOfProgram)

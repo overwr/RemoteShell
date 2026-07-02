@@ -1,6 +1,7 @@
 import socket as SocketLib
 import Settings
 import Functions
+import time as Time
 
 
 def Start():
@@ -9,11 +10,15 @@ def Start():
 
     Socket = Functions.CreateSocket(SocketLib.AF_INET, SocketLib.SOCK_STREAM)
 
+    while True:
+        try:
+            Socket.connect((Settings.ServerIp, Settings.ServerPort))
+            break
+        except:
+            Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.ConnectErrorMessage)
+            Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.TimeoutMessage)
+            Time.sleep(Settings.Timeout)
 
-    try:
-        Socket.connect((Settings.ServerIp, Settings.ServerPort))
-    except:
-        Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.ConnectErrorMessage)
 
 
     while Message != Settings.ClientEndCommand:

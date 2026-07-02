@@ -87,9 +87,11 @@ def Start():
 
 
 if __name__ == "__main__":
+    print(Settings.ServerIp)
     rc = 1
     while rc != 0:
         print('Restart...')
+        Functions.CheckAndPrint(Settings.DebugOutputFlag, Settings.TimeoutMessage)
         rc = Start()
 
     print(Settings.EndOfProgram)

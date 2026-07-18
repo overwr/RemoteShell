@@ -1,18 +1,23 @@
+import socket as SocketLib
+
+#values
+ServerQueue = 3
+BindCode = 0
+ConnectCode = 1
+CSClientCode = 1
+CSServerCode = 0
+
+
 # NetworkConfiguration
 ServerIp = "127.0.0.1"
 ServerPort = 9050
 AcceptingIp = ""
 Timeout = 1
-Frame = 1024
+Frame = 8096
 ServerQueue = 1
-Mode = 0
-ClientIp = ""
-ClientPort = 9050
+IpV = SocketLib.AF_INET
+Protocol = SocketLib.SOCK_STREAM
 
-# Values
-ClientToServerMode = 0
-ServerToClientMode = 1
-ServerQueue = 3
 
 
 # Commands
@@ -24,13 +29,10 @@ RemoveDefaultShell = "-None-"
 # Flags
 DebugOutputFlag = True
 
-
 # Return codes
 VoidRetCode = None
 SuccessfulCode = 0
 ErrorCode = -1
-ErrorCodeTrue = 1
-ErrorCodeFalse = 0
 
 
 # Strings
